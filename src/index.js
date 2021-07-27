@@ -19,13 +19,17 @@ app.use(taskRouter);
 app.listen(port,()=>{
     console.log('server runnig on',port);
 })
-
-const jwt = require('jsonwebtoken');
-const myFunction = async()=>{
-    const token = jwt.sign({_id:'abcd123'},'secret',{expiresIn:'1h'}); //this creates jwt token with payload data and the secret key, and exprires in param
-    console.log(token);
-
-    const data = jwt.verify(token,'secret'); //this verify the secret of jwt and returns the payload data from that token
-    console.log(data);
+const main = async ()=>{
+    const user = await User.findById('sdfsd some user id...');
+    await user.populate('tasks').execPopulate();
+    console.log(user.tasks);
 }
-//myFunction();
+// const jwt = require('jsonwebtoken');
+// const myFunction = async()=>{
+//     const token = jwt.sign({_id:'abcd123'},'secret',{expiresIn:'1h'}); //this creates jwt token with payload data and the secret key, and exprires in param
+//     console.log(token);
+
+//     const data = jwt.verify(token,'secret'); //this verify the secret of jwt and returns the payload data from that token
+//     console.log(data);
+// }
+// //myFunction();

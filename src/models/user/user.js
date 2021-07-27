@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const Task = require('../task/task')
 //user
 
 const userSchema = new mongoose.Schema({
@@ -48,8 +49,14 @@ const userSchema = new mongoose.Schema({
             required:true,
         }
     }]
+},{
+    timestamps:true, //mongo will take care of the time when the data is created and when it is last updated
 })
-
+userSchema.virtual('tasks',{ //referrence to relational Task model 
+    ref: 'Task',
+    localField:'_id', //related with (User)
+    foreignField: 'owner', //related to(Task)
+})
 
 
 //defining new method for mongodb query, static methods are availabe on models also known as model method
@@ -77,10 +84,17 @@ userSchema.methods.generateAuthToken = async function(){ // methods are also ava
 
     return token;
 }
-
+//userSchema.methods.getPublicProfile = async function(){ //this fn is for the purpose to hide all the secret details before resonding to client side
+    userSchema.methods.toJSON = async function(){    
+    const user =this;
+    const userObject = user.toObject();
+    delete userObject.password;
+    delete userObject.tokens;
+    return userObject;
+}
 
 //middleware(before), hash the password before query
-userSchema.pre('save',async function(next){
+userSchema.pre('save',async function(next){ //will run at every save command
     const user = this; //this is her document which we are saving in db,here the user document
     console.log("here*");
     if(user.isModified('password')){ //if the password field is modified, or the user is just created 
@@ -89,6 +103,14 @@ userSchema.pre('save',async function(next){
     
     next();//it is to say that the code is done here 
 })
+//middleware for deleting the user's  task when user is removed
+userSchema.pre('remove', async function(next){//will run at remove command/query
+    const user = this;
+    await Task.deleteMany({owner:user._id});
+
+    next();
+})
+
 
 const User = mongoose.model('User',userSchema)
 
