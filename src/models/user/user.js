@@ -48,7 +48,10 @@ const userSchema = new mongoose.Schema({
             type:String,
             required:true,
         }
-    }]
+    }],
+    avatar:{
+        type:Buffer
+    }
 },{
     timestamps:true, //mongo will take care of the time when the data is created and when it is last updated
 })
@@ -84,12 +87,13 @@ userSchema.methods.generateAuthToken = async function(){ // methods are also ava
 
     return token;
 }
-//userSchema.methods.getPublicProfile = async function(){ //this fn is for the purpose to hide all the secret details before resonding to client side
+//userSchema.methods.getPublicProfile = async function(){ //this fn is for the purpose to hide all the secret details before responding to client side
     userSchema.methods.toJSON = async function(){    
     const user =this;
     const userObject = user.toObject();
     delete userObject.password;
     delete userObject.tokens;
+    delete userObject.avatar;
     return userObject;
 }
 
