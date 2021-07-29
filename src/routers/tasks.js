@@ -16,48 +16,35 @@ router.post('/tasks',auth,async(req,res)=>{
     } catch (error) {
         res.status(200).send(error);
     }
-    // task.save().then(()=>{
-    //     res.status(200).send(task);
-    // }).catch((error)=>{
-    //     res.status(200).send(error);
-    // })
+
 })
-//get all tasks(/tasks?completed=true/false)
-//for pagination (?limit=...&skip=...)
-//for sort (ex: ?sortBy=createdAt:desc (asc for ascending desc for decending))
 router.get('/tasks', auth,async (req,res)=>{
     const match = {};
     if(req.query.completed){
-        match.completed = req.query.completed === 'true' //will return boolean true or false 
+        match.completed = req.query.completed === 'true' 
     }
     const sort = {}
     if(req.query.sortBy){
-        const parts = req.query.sortBy.split(':'); //createdAt:desc (this query string will split by :  ) 
+        const parts = req.query.sortBy.split(':'); 
         sort[parts[0]] = parts[1] === 'desc' ? -1 : 1;
     }
     
 
     try {
-        //const tasks = await Task.find({owner: req.user._id});
-        await req.user.populate({//
+   
+        await req.user.populate({
             path:'tasks', 
-            match:match,//for filter
-            option:{ //for pagination
+            match:match,
+            option:{ 
                 limit:parseInt(req.query.limit),
                 skip: parseInt(req.query.skip),
-                sort:sort, //for sorting, sort is a object like {createdAt: 1 or -1}
+                sort:sort,
             }
         }).execPopulate()
         res.send(req.user.tasks); 
     } catch (error) {
         res.status(500).send(error);
     }
-
-    // Task.find({}).then((tasks)=>{
-    //     res.send(tasks);
-    // }).catch((err)=>{
-    //     res.status(500).send(err);
-    // })
 })
 // get task by id
 router.get('/tasks/:id',auth,async(req,res)=>{
@@ -72,15 +59,6 @@ router.get('/tasks/:id',auth,async(req,res)=>{
         res.status(500).send(error);
     }
 
-    // Task.findById(_id).then((task)=>{
-    //     if(!task){
-    //         return res.status(404).send();
-    //     }
-    //     res.send(task);
-    // }).catch((err)=>{
-    //     res.status(500).send();
-    // })
-
 })
 //update a task by id
 router.patch('/tasks/:id', auth,async(req,res)=>{
@@ -93,7 +71,6 @@ router.patch('/tasks/:id', auth,async(req,res)=>{
 
     try {
         const task = await Task.findById({_id: req.params.id, owner: req.user._id});
-        //const task = await Task.findByIdAndUpdate(req.params.id, req.body,{new:true,runValidators:true});
         if(!task){
             return res.status(404).send();
         }
