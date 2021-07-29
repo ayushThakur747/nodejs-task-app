@@ -10,5 +10,3 @@ app.use(userRouter);
 app.use(taskRouter);
 
 module.exports = app;
-
-//this is for testing purpose(supertest)
