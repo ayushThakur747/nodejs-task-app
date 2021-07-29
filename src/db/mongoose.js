@@ -1,7 +1,10 @@
+const dotenv = require('dotenv');
 const mongoose = require('mongoose');
-
+dotenv.config();
 //db connection
-mongoose.connect('mongodb://localhost/tasksdb',{
+//import mongodb url from dev.env
+const mongoURL = process.env.MONGODB_URL || 'mongodb://localhost/tasksdb';
+mongoose.connect(mongoURL,{
 
         useNewUrlParser: true,
         useUnifiedTopology: true,

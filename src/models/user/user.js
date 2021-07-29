@@ -67,13 +67,15 @@ userSchema.statics.findByCredentials = async(email, password)=>{
     
     const user = await User.findOne({email});
     if(!user){
-        return user.error = 'unable to login';
+        //return user.error = 'unable to login';
+        throw new Error('Unable to login');
     } 
     
     const isMatch = await bcrypt.compare(password,user.password);
     
     if(!isMatch){
-        return user.error = 'unable to login';
+        //return user.error = 'unable to login';
+        throw new Error('Unable to login');
     } 
     return user;
 }
@@ -88,19 +90,20 @@ userSchema.methods.generateAuthToken = async function(){ // methods are also ava
     return token;
 }
 //userSchema.methods.getPublicProfile = async function(){ //this fn is for the purpose to hide all the secret details before responding to client side
-    userSchema.methods.toJSON = async function(){    
+userSchema.methods.toJSON =function(){   //it cannt be async function
     const user =this;
+
     const userObject = user.toObject();
     delete userObject.password;
     delete userObject.tokens;
     delete userObject.avatar;
+ 
     return userObject;
 }
 
 //middleware(before), hash the password before query
 userSchema.pre('save',async function(next){ //will run at every save command
     const user = this; //this is her document which we are saving in db,here the user document
-    console.log("here*");
     if(user.isModified('password')){ //if the password field is modified, or the user is just created 
         user.password = await bcrypt.hash(user.password,8);
     }
@@ -114,7 +117,6 @@ userSchema.pre('remove', async function(next){//will run at remove command/query
 
     next();
 })
-
 
 const User = mongoose.model('User',userSchema)
 

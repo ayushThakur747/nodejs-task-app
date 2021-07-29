@@ -4,15 +4,19 @@ const auth = require('../middleware/auth');
 const router = new express.Router();
 const multer = require('multer'); //for file uploads
 const sharp = require('sharp'); //helps us to set the type of image and resizing image
+const {sendWelcomeEmail,sendCancelationEmail} = require('../emails/account.js');
+
+
 //add a new user sign-up
 router.post('/users', async (req,res)=>{
-    console.log("here");
+    
     const user = new User(req.body);
     try {
         await user.save();
+        sendWelcomeEmail(user.email, user.name);//will send a welcome mail to user email
         const token = await user.generateAuthToken();
-                     
-        res.send({user,token});
+        console.log("user: ",user);
+        res.status(200).send({user,token});
     } catch (error) {
         res.status(500).send(error);
     }
@@ -24,20 +28,17 @@ router.post('/users/login',async (req,res)=>{
     
     try {
         const user = await User.findByCredentials(req.body.email,req.body.password); //new dynamic method created by us for mongodb query
-        if(user.error) res.status(404).send(user.error);
-    
         const token = await user.generateAuthToken();
-                     
-        //res.send({user: user.getPublicProfile(),token});
-        res.send({user: user,token});
+        
+        res.send({user,token});
     } catch (error) {
-        res.status(400);
+        res.status(400).send();
     }
 })
 
 //get user me
 router.get('/users/me',auth,async(req,res)=>{
-    req.send(req.user); //req.user from the middleware auth
+    res.status(200).send(req.user); //req.user from the middleware auth
 })
 //logout
 router.post('/users/logout',auth,async(req,res)=>{
@@ -45,10 +46,13 @@ router.post('/users/logout',auth,async(req,res)=>{
         req.user.tokens = req.user.tokens.filter((token)=>{
             return token.token !== req.token;
         })
+        await req.user.save();
+        res.send();
     } catch (error) {
         res.status(500).send();
     }
 })
+//logout from all devices
 router.post('/users/logoutAll',auth,async(req,res)=>{
     try {
         req.user.tokens = [];
@@ -68,7 +72,7 @@ router.patch('/users/me',auth,async(req,res)=>{
     const isValidOperation = updates.every((update)=>{
         allowedUpdates.includes(update);
     })
-    if(isValidOperation) return res.status(404).send({error:'Invalid updates'})
+    if(!isValidOperation) return res.status(400).send({error:'Invalid updates'})
 
     try {
         // const user = await User.findById(req.params.id);
@@ -84,7 +88,7 @@ router.patch('/users/me',auth,async(req,res)=>{
         updates.forEach((update)=> req.user[update] = req.body[update]);
         await req.user.save();
 
-        res.send(req.user);
+        res.status(200).send(req.user);
     } catch (error) {
         res.status(400).send(error);
     }
@@ -97,7 +101,8 @@ router.delete('/users/me',auth,async(req,res)=>{
         //     return res.status(404).send();
         // }
         await req.user.remove();
-        res.send(req.user);
+        sendCancelationEmail(req.user.email, req.user.name);
+        res.status(200).send(req.user);
     }catch(error){
         res.status(500).send(error);
     }
@@ -116,15 +121,13 @@ const upload = multer({
     }
 })
 //upload a avatar
-router.post('/users/me/avatar',upload.single('avatar'),async(req,res)=>{
-    const buffer = await sharp(req.file.buffer).png.toBuffer(); //convert image to png using sharp and getting back png buffer
-    
-    
-    req.user.avatar = req.file.buffer;
+router.post('/users/me/avatar',auth,upload.single('avatar'),async(req,res)=>{
+    const buffer = await sharp(req.file.buffer).resize({width:250,height:250}).png().toBuffer(); //convert image to png using sharp and getting back png buffer
+    req.user.avatar = buffer;//modified image
     await req.user.save();
     res.send();
 },(error,req,res,next)=>{//handle error
-    res.send({error: error.message})
+    res.status(400).send({error: error.message})
 })
 
 //delete avatar
