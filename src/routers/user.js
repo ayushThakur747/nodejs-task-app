@@ -13,7 +13,7 @@ router.post('/users', async (req,res)=>{
     const user = new User(req.body);
     try {
         await user.save();
-        sendWelcomeEmail(user.email, user.name);//will send a welcome mail to user email
+        sendWelcomeEmail(user.email, user.name);
         const token = await user.generateAuthToken();
         console.log("user: ",user);
         res.status(200).send({user,token});
@@ -27,7 +27,7 @@ router.post('/users', async (req,res)=>{
 router.post('/users/login',async (req,res)=>{
     
     try {
-        const user = await User.findByCredentials(req.body.email,req.body.password); //new dynamic method created by us for mongodb query
+        const user = await User.findByCredentials(req.body.email,req.body.password); 
         const token = await user.generateAuthToken();
         
         res.send({user,token});
@@ -38,7 +38,7 @@ router.post('/users/login',async (req,res)=>{
 
 //get user me
 router.get('/users/me',auth,async(req,res)=>{
-    res.status(200).send(req.user); //req.user from the middleware auth
+    res.status(200).send(req.user); 
 })
 //logout
 router.post('/users/logout',auth,async(req,res)=>{
@@ -74,17 +74,7 @@ router.patch('/users/me',auth,async(req,res)=>{
     })
     if(!isValidOperation) return res.status(400).send({error:'Invalid updates'})
 
-    try {
-        // const user = await User.findById(req.params.id);
-        // updates.forEach((update)=> user[update] = req.body[update]);
-        // await user.save();
-
-        // //const user = await User.findByIdAndUpdate(req.params.id, req.body,{new:true,runValidators:true});
-        // if(!user){
-        //     return res.status(404).send();
-        // }
-        // res.send(user);
-    
+    try {    
         updates.forEach((update)=> req.user[update] = req.body[update]);
         await req.user.save();
 
@@ -96,10 +86,6 @@ router.patch('/users/me',auth,async(req,res)=>{
 //delete a user
 router.delete('/users/me',auth,async(req,res)=>{
     try{
-        // const user = await User.findByIdAndDelete(req.user._id);
-        // if(!user){
-        //     return res.status(404).send();
-        // }
         await req.user.remove();
         sendCancelationEmail(req.user.email, req.user.name);
         res.status(200).send(req.user);
@@ -122,11 +108,11 @@ const upload = multer({
 })
 //upload a avatar
 router.post('/users/me/avatar',auth,upload.single('avatar'),async(req,res)=>{
-    const buffer = await sharp(req.file.buffer).resize({width:250,height:250}).png().toBuffer(); //convert image to png using sharp and getting back png buffer
-    req.user.avatar = buffer;//modified image
+    const buffer = await sharp(req.file.buffer).resize({width:250,height:250}).png().toBuffer();
+    req.user.avatar = buffer;
     await req.user.save();
     res.send();
-},(error,req,res,next)=>{//handle error
+},(error,req,res,next)=>{
     res.status(400).send({error: error.message})
 })
 
@@ -151,49 +137,4 @@ router.get('/users/:id/avatar',async(req,res)=>{
     }
 })
 
-
 module.exports = router;
-
-
-
-
-// //get all users
-// router.get('/users',auth,async(req,res)=>{
-//     try {
-//        const users = await User.find({})
-//        res.send(users);
-//     } catch (error) {
-//         res.status(500).send(err);
-//     }
-//     // User.find({}).then((users)=>{
-//     //     res.send(users);
-//     // }).catch((err)=>{
-//     //     res.status(500).send(err);
-//     // })
-// })
-
-// get user ny id
-// router.get('/users/:id',async (req,res)=>{
-
-//     const _id = req.params.id;
-
-//     try {
-//         const user = await User.findById(_id);
-//         if(!user){
-//             return res.status(404).send();
-//         }
-//         res.send(user);
-//     } catch (error) {
-//         res.status(500).send();
-//     }
-    
-//     // User.findById(_id).then((user)=>{
-//     //     if(!user){
-//     //         return res.status(404).send();
-//     //     }
-//     //     res.send(user);
-//     // }).catch((err)=>{
-//     //     res.status(500).send();
-//     // })
-
-// })
