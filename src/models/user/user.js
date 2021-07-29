@@ -53,34 +53,30 @@ const userSchema = new mongoose.Schema({
         type:Buffer
     }
 },{
-    timestamps:true, //mongo will take care of the time when the data is created and when it is last updated
+    timestamps:true, 
 })
-userSchema.virtual('tasks',{ //referrence to relational Task model 
+userSchema.virtual('tasks',{ 
     ref: 'Task',
-    localField:'_id', //related with (User)
-    foreignField: 'owner', //related to(Task)
+    localField:'_id', 
+    foreignField: 'owner', 
 })
 
-
-//defining new method for mongodb query, static methods are availabe on models also known as model method
 userSchema.statics.findByCredentials = async(email, password)=>{ 
     
     const user = await User.findOne({email});
     if(!user){
-        //return user.error = 'unable to login';
         throw new Error('Unable to login');
     } 
     
     const isMatch = await bcrypt.compare(password,user.password);
     
     if(!isMatch){
-        //return user.error = 'unable to login';
         throw new Error('Unable to login');
     } 
     return user;
 }
 
-userSchema.methods.generateAuthToken = async function(){ // methods are also avail on instance  
+userSchema.methods.generateAuthToken = async function(){ 
     const user = this;
     const token = jwt.sign({_id:user._id.toString()},'secret');
     
@@ -89,8 +85,7 @@ userSchema.methods.generateAuthToken = async function(){ // methods are also ava
 
     return token;
 }
-//userSchema.methods.getPublicProfile = async function(){ //this fn is for the purpose to hide all the secret details before responding to client side
-userSchema.methods.toJSON =function(){   //it cannt be async function
+userSchema.methods.toJSON =function(){  
     const user =this;
 
     const userObject = user.toObject();
@@ -101,17 +96,15 @@ userSchema.methods.toJSON =function(){   //it cannt be async function
     return userObject;
 }
 
-//middleware(before), hash the password before query
-userSchema.pre('save',async function(next){ //will run at every save command
-    const user = this; //this is her document which we are saving in db,here the user document
-    if(user.isModified('password')){ //if the password field is modified, or the user is just created 
+userSchema.pre('save',async function(next){ 
+    const user = this; 
+    if(user.isModified('password')){ 
         user.password = await bcrypt.hash(user.password,8);
     }
     
-    next();//it is to say that the code is done here 
+    next();
 })
-//middleware for deleting the user's  task when user is removed
-userSchema.pre('remove', async function(next){//will run at remove command/query
+userSchema.pre('remove', async function(next){
     const user = this;
     await Task.deleteMany({owner:user._id});
 
